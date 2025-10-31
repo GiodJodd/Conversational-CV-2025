@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --bg-color: #fdfdfd;
+      --user-bubble-bg: #e8e8e8;
+      --assistant-bubble-bg: transparent;
+      --suggestion-button-bg: #e8e8e8;
+      --button-color: #111111;
+      --button-icon-color: #ffffff;
+      --text-color: #000000;
+      --placeholder-color: #777777;
+      --hover-color: #CCCCCC; /* Fixed, not customizable */
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #3B3B3B;
+        --user-bubble-bg: #454545;
+        --assistant-bubble-bg: transparent;
+        --suggestion-button-bg: #454545;
+        --button-color: #fdfdfd;
+        --button-icon-color: #000000;
+        --text-color: #fdfdfd;
+        --placeholder-color: #777777;
+        --hover-color: #5a5a5a; /* Adjusted for dark mode */
+      }
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text-color);
+    }
+
+    .chat-container {
+      backdrop-filter: blur(5px);
+      background: var(--bg-color);
+      border-radius: 8px;
+      padding: 50px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+      height: 100%;
+      justify-content: flex-end;
+    }
+
+    .suggestions-container {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 16px 0;
+      justify-content: flex-start;
+      align-items: center;
+    }
+
+    .suggestion-button {
+      background: var(--suggestion-button-bg);
+      border: none;
+      border-radius: 12px;
+      padding: 12px;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text-color);
+      cursor: pointer;
+      transition: background-color 0.2s;
+      line-height: normal;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .suggestion-button:hover {
+      background: var(--hover-color);
+    }
+
+    .suggestion-button strong {
+      font-weight: 700;
+    }
+
+    .messages-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 0;
+    }
+
+    .message {
+      display: flex;
+      padding: 16px 0;
+      width: 100%;
+    }
+
+    .message.user {
+      justify-content: flex-end;
+    }
+
+    .message.assistant {
+      justify-content: flex-start;
+    }
+
+    .message-bubble {
+      padding: 12px;
+      border-radius: 12px;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-size: 13px;
+      font-weight: 400;
+      line-height: normal;
+      color: var(--text-color);
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .message-bubble.user {
+      background: var(--user-bubble-bg);
+      max-width: 466px;
+    }
+
+    .message-bubble.assistant {
+      background: var(--assistant-bubble-bg);
+      max-width: calc(100% - 32px);
+      padding-right: 32px;
+    }
+
+    .input-container {
+      background: var(--user-bubble-bg);
+      border-radius: 48px;
+      padding: 11px 8px 11px 16px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      height: 60px;
+      width: 100%;
+      flex-shrink: 0;
+      transition: background-color 0.2s;
+    }
+
+    .input-container:hover {
+      background: var(--hover-color);
+    }
+
+
+    .input-wrapper {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .input-field {
+      width: 100%;
+      border: none;
+      background: transparent;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text-color);
+      outline: none;
+      padding: 0;
+    }
+
+    .input-field::placeholder {
+      color: var(--placeholder-color);
+    }
+
+    .send-button {
+      width: 44px;
+      height: 44px;
+      border-radius: 33px;
+      background: var(--button-color);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      padding: 11px 14px;
+      transition: opacity 0.2s;
+    }
+
+    .send-button:hover {
+      opacity: 0.9;
+    }
+
+    .send-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .send-button svg {
+      width: 32px;
+      height: 32px;
+    }
+
+    .send-button svg path,
+    .send-button svg rect {
+      fill: var(--button-icon-color);
+    }
+
+    .send-icon {
+      display: block;
+    }
+
+    .stop-icon {
+      display: none;
+    }
+
+    .send-button.stop-mode .send-icon {
+      display: none;
+    }
+
+    .send-button.stop-mode .stop-icon {
+      display: block;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Loading dots animation */
+    .loading-dots {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .loading-dot {
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: var(--text-color);
+      opacity: 0;
+      animation: dot-pulse 450ms infinite;
+    }
+
+    .loading-dot:nth-child(1) {
+      animation-delay: 0ms;
+    }
+
+    .loading-dot:nth-child(2) {
+      animation-delay: 150ms;
+    }
+
+    .loading-dot:nth-child(3) {
+      animation-delay: 300ms;
+    }
+
+    @keyframes dot-pulse {
+      0% {
+        opacity: 0;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .message-bubble {
+        max-width: calc(100% - 20px);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .message-bubble {
+        max-width: calc(100% - 20px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <!-- Suggestion Buttons (shown when no messages) -->
+    <div id="suggestions" class="suggestions-container">
+      <button type="button" class="suggestion-button" data-question=“First”>
+        <strong>First</strong>
+      </button>
+      <button type="button" class="suggestion-button" data-question=“Second?”>
+        <strong>Second</strong>
+      </button>
+      <button type="button" class="suggestion-button" data-question="How is this chatbot built?">
+        How is this <strong>chatbot built?</strong>
+      </button>
+    </div>
+
+    <!-- Messages Container -->
+    <div id="messages" class="messages-container hidden"></div>
+
+    <!-- Input Container -->
+    <form id="form" class="input-container">
+      <div class="input-wrapper">
+        <input
+          type="text"
+          id="input"
+          class="input-field"
+          placeholder="Ask about experience, projects, skills, favorite pasta..."
+          autocomplete="off"
+        />
+      </div>
+      <button type="submit" id="send-button" class="send-button">
+        <svg class="send-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 256 256">
+          <path d="M205.66,117.66a8,8,0,0,1-11.32,0L136,59.31V216a8,8,0,0,1-16,0V59.31L61.66,117.66a8,8,0,0,1-11.32-11.32l72-72a8,8,0,0,1,11.32,0l72,72A8,8,0,0,1,205.66,117.66Z"></path>
+        </svg>
+        <svg class="stop-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+          <rect x="8" y="8" width="16" height="16" rx="1"/>
+        </svg>
+      </button>
+    </form>
+  </div>
+
+  <script>
+    const ENDPOINT = 'https://251030-ai-cv-dvwk.vercel.app/api/chat';
+    const form = document.getElementById('form');
+    const input = document.getElementById('input');
+    const messagesContainer = document.getElementById('messages');
+    const suggestionsContainer = document.getElementById('suggestions');
+    const sendButton = document.getElementById('send-button');
+    
+    let messages = [];
+    let currentAbortController = null;
+    let currentAssistantBubble = null;
+
+    // Initialize - show suggestions, hide messages
+    function updateUIState() {
+      if (messages.length === 0) {
+        suggestionsContainer.classList.remove('hidden');
+        messagesContainer.classList.add('hidden');
+      } else {
+        suggestionsContainer.classList.add('hidden');
+        messagesContainer.classList.remove('hidden');
+      }
+    }
+
+    // Create loading dots element
+    function createLoadingDots() {
+      const dotsContainer = document.createElement('div');
+      dotsContainer.className = 'loading-dots';
+      for (let i = 0; i < 3; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'loading-dot';
+        dotsContainer.appendChild(dot);
+      }
+      return dotsContainer;
+    }
+
+    // Add message bubble
+    function addMessage(text, role) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${role}`;
+      
+      const bubble = document.createElement('div');
+      bubble.className = `message-bubble ${role}`;
+      
+      if (text === '...') {
+        // Use loading dots for loading state
+        bubble.appendChild(createLoadingDots());
+      } else {
+        bubble.textContent = text;
+      }
+      
+      messageDiv.appendChild(bubble);
+      messagesContainer.appendChild(messageDiv);
+      
+      // Scroll to bottom
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      
+      return bubble;
+    }
+
+    // Reset send button to normal state
+    function resetSendButton() {
+      sendButton.classList.remove('stop-mode');
+      sendButton.type = 'submit';
+      sendButton.disabled = false;
+      currentAbortController = null;
+      currentAssistantBubble = null;
+    }
+
+    // Send message function
+    async function sendMessage(question) {
+      if (!question || !question.trim()) return;
+
+      // If there's already a request in progress, abort it first
+      if (currentAbortController) {
+        currentAbortController.abort();
+      }
+
+      messages.push({ role: 'user', content: question });
+      addMessage(question, 'user');
+      updateUIState();
+
+      const assistantBubble = addMessage('...', 'assistant');
+      currentAssistantBubble = assistantBubble;
+      
+      // Change button to stop mode
+      sendButton.classList.add('stop-mode');
+      sendButton.type = 'button';
+      sendButton.disabled = false;
+
+      // Create new abort controller
+      currentAbortController = new AbortController();
+
+      try {
+        const resp = await fetch(ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages }),
+          signal: currentAbortController.signal
+        });
+
+        if (!resp.ok || !resp.body) {
+          assistantBubble.textContent = 'Sorry, something went wrong.';
+          resetSendButton();
+          return;
+        }
+
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let assistantText = '';
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.startsWith('0:')) {
+              try {
+                assistantText += JSON.parse(line.slice(2));
+              } catch (e) {
+                // Ignore parse errors
+              }
+            }
+          }
+
+          // Replace loading dots with actual text
+          assistantBubble.innerHTML = '';
+          assistantBubble.textContent = assistantText;
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        messages.push({ role: 'assistant', content: assistantText });
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          // User cancelled the request
+          if (currentAssistantBubble) {
+            currentAssistantBubble.innerHTML = '';
+            currentAssistantBubble.textContent = 'Request cancelled.';
+          }
+        } else {
+          if (currentAssistantBubble) {
+            currentAssistantBubble.textContent = 'Network error. Please try again.';
+          }
+        }
+      } finally {
+        resetSendButton();
+      }
+    }
+
+    // Form submit handler
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const question = input.value.trim();
+      if (!question) return;
+      
+      input.value = '';
+      await sendMessage(question);
+    });
+
+    // Handle stop button click
+    sendButton.addEventListener('click', (e) => {
+      if (sendButton.classList.contains('stop-mode')) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (currentAbortController) {
+          currentAbortController.abort();
+        }
+      }
+    });
+
+    // Suggestion button handlers
+    const suggestionButtons = document.querySelectorAll('.suggestion-button');
+    suggestionButtons.forEach(button => {
+      button.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const question = button.getAttribute('data-question');
+        if (question) {
+          sendMessage(question);
+        }
+      });
+    });
+
+    // Framer color control
+    function updateColors(colors) {
+      if (colors.background) {
+        document.documentElement.style.setProperty('--bg-color', colors.background);
+      }
+      if (colors.userBubble) {
+        document.documentElement.style.setProperty('--user-bubble-bg', colors.userBubble);
+      }
+      if (colors.assistantBubble) {
+        document.documentElement.style.setProperty('--assistant-bubble-bg', colors.assistantBubble);
+      }
+      if (colors.suggestionButton) {
+        document.documentElement.style.setProperty('--suggestion-button-bg', colors.suggestionButton);
+      }
+      if (colors.buttonColor) {
+        document.documentElement.style.setProperty('--button-color', colors.buttonColor);
+      }
+      if (colors.textColor) {
+        document.documentElement.style.setProperty('--text-color', colors.textColor);
+      }
+      if (colors.placeholderColor) {
+        document.documentElement.style.setProperty('--placeholder-color', colors.placeholderColor);
+      }
+    }
+
+    // Listen for messages from Framer parent
+    window.addEventListener('message', (event) => {
+      // Accept messages from any origin (for Framer embedding)
+      if (event.data && event.data.type === 'updateColors') {
+        updateColors(event.data.colors);
+      }
+    });
+
+    // Initialize UI state
+    updateUIState();
+  </script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "giordano-ai-about",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'Build complete'",
+    "start": "vercel dev"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^1.0.0",
+    "ai": "^3.0.0",
+    "@vercel/node": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.4",
+    "typescript": "^5.6.3"
+  }
+}
+

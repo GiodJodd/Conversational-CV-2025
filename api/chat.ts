@@ -41,7 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .slice(-10);
 
     const result = await streamText({
-      model: openai('gpt-4-mini'),
+      model: openai('gpt-5-nano'),
       system: SYSTEM_PROMPT,
       messages: truncated,
       temperature: 0.5,
